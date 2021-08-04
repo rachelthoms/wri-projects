@@ -1,2 +1,2 @@
 # wri-projects
-Public-facing components of Resource Watch: visualizations, maps, analyses, etc
+\Contains code and related assets for projects executed at WRI. This repo is intended to be complementary to dedicated project repos [formally under the WRI umbrella](https://github.com/wri), rather than duplicative. Often code needs to be written, organized, and stored prior to the creation of a dedicated project repo, or the additional flexibility of a personal repo is helpful in managing project content. Some content in this repo may 'graduate' to project repos, and subsequently be maintained there, but will be retained here as well.
