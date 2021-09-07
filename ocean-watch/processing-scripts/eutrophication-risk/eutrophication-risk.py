@@ -86,6 +86,4 @@ df['name'] = df.name_0.astype(str)
 
 logger.info('Upload dataframe to Carto')
 # upload data frame to Carto
-test = pd.isna(df['name_0'])
-df.to_csv('data.csv')
 to_carto(df, 'ocn_calcs_014_eutrophication_risk', if_exists='replace')
