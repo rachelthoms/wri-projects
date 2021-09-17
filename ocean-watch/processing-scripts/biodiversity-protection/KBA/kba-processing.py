@@ -39,5 +39,5 @@ df=pd.read_csv(raw_data_file, encoding='latin-1')
 
 logger.info('Upload dataframe to Carto')
 # upload data frame to Carto
-to_carto(df, 'ocn_calcs_015_protections_of_key_biodiversity_areas', if_exists='replace')
+to_carto(df, 'ocn_024a_rw0_key_biodiversity_area_protection', if_exists='replace')
 
