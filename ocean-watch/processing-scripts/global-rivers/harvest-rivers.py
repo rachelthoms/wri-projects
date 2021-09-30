@@ -39,7 +39,8 @@ overpass_url = "https://lz4.overpass-api.de/api/interpreter"
 template = """
 [out:json]
 [timeout:180];
-way{bbox}[waterway=river]["name"];
+(way{bbox}[waterway=river]["name"];
+way{bbox}[waterway=canal]["name"];);
 (._;>;);out;
 """
 
@@ -67,7 +68,7 @@ while x_left <= x_stop - x_size:
                 # Request elements from the query
                 response = requests.get(overpass_url, params={'data': overpass_query,}, headers = {'User-agent': 'wriuser'})
                 # save the resulting json
-                data = response.json()  
+                data = response.json()
                 # convert the data from json to geojson format                  
                 geojson= osm2geojson.json2geojson(data)
                 # move on to next bbox
