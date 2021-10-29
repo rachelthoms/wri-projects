@@ -7,7 +7,6 @@ import logging
 from shapely import geometry
 import requests
 import re
-from bs4 import BeautifulSoup
 import glob
 from zipfile import ZipFile
 import shutil
@@ -30,9 +29,18 @@ CARTO_USER = os.getenv('CARTO_WRI_RW_USER')
 CARTO_KEY = os.getenv('CARTO_WRI_RW_KEY')
 set_default_credentials(username=CARTO_USER, base_url="https://{user}.carto.com/".format(user=CARTO_USER),api_key=CARTO_KEY)
 
+slugs = ["a_coastal_zone_general_auto","a_coastal_fisheries_auto","a_coastal_management_auto","a_mangroves_auto","a_sea_level_rise_protection_auto","a_fisheries_and_aquaculture_auto","m_fisheries_and_aquaculture_auto","m_renewable_energy_ocean_auto","m_maritime_auto"]
+
+indicator_url = 'https://www.climatewatchdata.org/api/v1/data/ndc_content/indicators'
+req = requests.get(indicator_url)
+json_dict= json.loads(req.text)
+df = pd.DataFrame.from_dict(json_dict['data'])
+df = df = df.loc[df['slug'].isin(slugs)]
+
+
 # insert the url used to download the data from the source website
 
-ids = ["133555","133497","133513","133543","133501","133502", "133409","133448","133492"]
+ids =[id for id in df['id']]
 
 url_shell= 'https://www.climatewatchdata.org/api/v1/data/ndc_content?indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&indicator_ids[]={}&per_page=1000'
 url_template = url_shell.format(*tuple(ids)) + '&page={}'

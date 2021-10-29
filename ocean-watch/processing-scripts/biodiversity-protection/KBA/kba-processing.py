@@ -26,7 +26,7 @@ CARTO_KEY = os.getenv('CARTO_WRI_RW_KEY')
 set_default_credentials(username=CARTO_USER, base_url="https://{user}.carto.com/".format(user=CARTO_USER),api_key=CARTO_KEY)
 
 # Set the data directory
-data_dir = '/home/rthoms/Github/resource-watch/wri-projects/ocean-watch/processing-scripts/biodiversity-protection/KBA/data'
+data_dir = str(os.getcwd()) + '/data' 
 
 logger.info('Pull KBAs from OneDrive')
 # Copy the kba data set from OneDrive into the daa directory
