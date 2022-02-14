@@ -5,6 +5,14 @@ import LMIPy as lmi
 import json
 import requests
 
+# This script takes all Ocean Watch and Coral Reef datasets from the Resource Watch tracking sheet and pulls the associated "assets"
+# (maps, charts, and widgets) from Ocean Watch and Coral Reef pages. The output is an excel spread sheet with each dataset, descriptive
+# information, and a dictionary with the assets of that dataset
+
+
+# It would be useful to expand this to datasets that only exist on carto
+
+# Resource watch dataset tracking sheet
 METADATA_SHEET = "https://docs.google.com/spreadsheets/d/1A3RbymgsB5bwljFsL20Brj-M29as0m2yPCAoAK25N6k/export?format=csv&gid=0"
 
 # Load OW json
@@ -17,12 +25,12 @@ crp_widget_dict= OrderedDict()
 # empty list to store mini_explore datasets
 crp_mini_ex_datasets= []
 
-# iterate through the jsons for the CR dashboard and profile
-crp_json_urls= ['https://api.resourcewatch.org/v1/dashboard/429', 'https://api.resourcewatch.org/v1/dashboard/504']
+# iterate through the jsons for the CR dashboard and profile to extract the assets in each
+crp_json_urls= ['https://api.resourcewatch.org/v1/dashboard/429', 'https://api.resourcewatch.org/v1/dashboard/544']
 for url in crp_json_urls:
-    # load the json
+    # load the dashboard json
     crp_object = json.loads(requests.get(url).text)['data']['attributes']['content']
-    # remove backslashes
+    # The content section of the dashboard jsons are very messy. They need to be cleaned up by removing backslashes
     crp_object_clean = crp_object.replace('/','')
     # Read in the dashboard content as a json
     crp_json= pd.read_json(json.loads(json.dumps(crp_object_clean)))
@@ -33,7 +41,8 @@ for url in crp_json_urls:
             if widget_id not in crp_widget_dict:
                 widget_object = lmi.Widget(widget_id)
                 widget_name = widget_object.attributes['name']
-                crp_widget_dict.setdefault(widget_id,[]).append({widget_name,'chart','CRP'})
+                crp_widget_dict.setdefault(widget_id,'CRP')
+        # we also want to grab the data layers used in the mini explore
         if row['type'] == 'mini-explore':
             crp_mini_ex_content= row['content'].replace('\n ','')
             crp_mini_ex_content = crp_mini_ex_content.replace('\\','')
@@ -41,6 +50,8 @@ for url in crp_json_urls:
             crp_mini_ex_datasets.extend(datasets)
 
 # Pull in widgets on OW
+# Ocean Watch has its own seperate widget tracking sheet stored in OneDrive at
+# https://onewri.sharepoint.com/sites/WRI_ocean/Shared%20Documents/Ocean%20Watch/Development/Data/ow_widget_tracking_sheet.xlsx
 WIDGET_TRACKING_SHEET = os.path.join(os.getenv('OCEANWATCH_DATA_DIR'), 'ow_widget_tracking_sheet.xlsx')
 ow_widgets = pd.read_excel(WIDGET_TRACKING_SHEET, header=0)
 
@@ -48,9 +59,10 @@ ow_widgets = pd.read_excel(WIDGET_TRACKING_SHEET, header=0)
 ow_widget_dict = OrderedDict()
 for id, t, name in zip(ow_widgets.widget_id,ow_widgets.widget_type, ow_widgets.widget_name):
     if id  not in ow_widget_dict:
-        ow_widget_dict.setdefault(id,[]).append({name,t, 'OW'})
+        ow_widget_dict.setdefault(id,'OW')
 
 # Pull datasets in the OW mini explore from the OW json
+# Note: this is based on the current structure of the OW json, any changes to the position of the miniexplore will break this
 ow_mini_ex_datasets = []
 mini_explore = ow_json['production']['country-profile'][3][0]['content'][1][0]['config']['datasetGroups']
 for group in mini_explore:
@@ -79,7 +91,7 @@ ocean_mdata = pd.concat([ow_mdata, coral_mdata], axis=0).drop_duplicates('API_ID
 # Keep relevant columns
 ocean_mdata = ocean_mdata[['New WRI_ID','Public Title', 'API_ID', 'Status']]
 
-# Add column for whether the dataset was added by the Ocean Watch Data Team
+# List of datasets not added by OW data team
 not_added_by_ow = [
     'bio.004.rw2', 
     'bio.007.rw1.nrt',
@@ -94,6 +106,7 @@ not_added_by_ow = [
 
 # iterate through the dataset the OW datasets and append the relevant assets to the `widgets` column
 for index, row in ocean_mdata.iterrows():
+    # Add column for whether the dataset was added by the Ocean Watch Data Team
     ocean_mdata.at[index, 'added_for_ow'] = False if row['New WRI_ID'] in not_added_by_ow else True
     dataset_object = lmi.Dataset(row['API_ID'])
     assets = {}
@@ -104,9 +117,9 @@ for index, row in ocean_mdata.iterrows():
         if id in crp_widget_dict:
             assets.setdefault(id,crp_widget_dict[id])
     if row['API_ID'] in ow_mini_ex_datasets:
-        assets.setdefault(id,[]).append({'mini-explore', 'OW'})
+        assets.setdefault('mini-explore', 'OW')
     if row['API_ID'] in crp_mini_ex_datasets:
-        assets.setdefault(id,[]).append({'mini-explore', 'CRP'})
+        assets.setdefault('mini-explore', 'CRP')
     ocean_mdata.loc[index, 'widgets'] = [assets]
 
 for dataset in crp_mini_ex_datasets:

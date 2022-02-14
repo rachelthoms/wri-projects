@@ -105,9 +105,12 @@ for page in ow_json.index:
 json_widget_ids = [id for id in json_widgets['widget_id']]
 json_widget_ids = np.unique(np.array(json_widget_ids))
 
-ow_widgets = pd.DataFrame(columns=['widget_id', 'dataset_id', 'widget_name','widget_description','caption','links'])
+ow_widgets = pd.DataFrame(columns=['widget_id', 'dataset_id', 'widget_name','widget_description','links', 'rw_dataset', 'carto_table', 'carto_url'])
 for dataset_id in dataset_ids:
     dataset_object = lmi.Dataset(dataset_id)
+    dataset_name = dataset_object.attributes['name'].split(' ')[0]
+    connector_url = dataset_object.attributes['connectorUrl']
+    table_name =  dataset_object.attributes['tableName'] 
     widget_list = dataset_object.widget
     for widget in widget_list:
         widget_id = widget.id
@@ -118,15 +121,15 @@ for dataset_id in dataset_ids:
             try: 
                 metadata_url =  f'http://api.resourcewatch.org/v1/dataset/{dataset_id}/widget/{widget_id}/metadata'
                 metadata_object = json.loads(requests.get(metadata_url).text)['data'][0]
-                caption = metadata_object['attributes']['info']['caption']
-                links = metadata_object['attributes']['info']['widgetLinks']
+                try: 
+                    links = metadata_object['attributes']['info']['widgetLinks']
+                except: links =''
             except:
-                caption = ''
                 links = ''
-            ow_widgets = ow_widgets.append({'widget_id': widget_id, 'dataset_id': dataset_id, 'widget_name': widget_name, 'widget_description': widget_description, 'caption': caption, 'links': links }, ignore_index=True)
+            ow_widgets = ow_widgets.append({'widget_id': widget_id, 'dataset_id': dataset_id, 'widget_name': widget_name, 'widget_description': widget_description,'links': links,  'rw_dataset': dataset_name, 'carto_table': table_name, 'carto_url': connector_url }, ignore_index=True)
 
 widget_table =  pd.merge(json_widgets,ow_widgets, on='widget_id', how='left')    
-widget_table = widget_table[['widget_id','dataset_id', 'page',  'achor_section', 'json_name', 'widget_type', 'widget_name','widget_description', 'caption', 'links']]       
+widget_table = widget_table[['widget_id','dataset_id', 'page',  'achor_section', 'json_name', 'widget_type', 'widget_name','widget_description', 'links', 'rw_dataset', 'carto_table', 'carto_url' ]]       
 
 # path to processed table
 processed_table = os.path.join(os.getenv('OCEANWATCH_DATA_DIR'), 'ow_widget_tracking_sheet.xlsx')
